@@ -20,7 +20,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--text); font-family: 'Pretendard', sans-serif; height: 100vh; overflow: hidden; }
 
-/* 로그인 화면 */
+/* 로그인 */
 #login-screen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 2000; }
 .login-box { background: var(--bg2); border: 1px solid var(--border); padding: 50px; border-radius: 32px; width: 420px; text-align: center; box-shadow: 0 40px 100px rgba(0,0,0,0.8); }
 .login-box .modal-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 16px; color: var(--text); margin-bottom: 15px; outline: none; }
@@ -38,31 +38,31 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
 .nav-item:hover { background: var(--bg3); color: var(--text); }
 .nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 800; }
 
-/* 메인 및 고정 상단바 */
+/* 메인 영역 스크롤 설정 */
 .main { flex: 1; overflow-y: auto; background: #0a0c10; display: flex; flex-direction: column; position: relative; scroll-behavior: smooth; }
+
+/* 고정 상단바 */
 .topbar { 
-  height: var(--topbar-h); padding: 0 40px; border-bottom: 1px solid var(--border); 
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; 
-  background: rgba(13, 15, 20, 0.95); backdrop-filter: blur(20px); 
-  position: sticky; top: 0; z-index: 110; 
+  height: var(--topbar-h); min-height: var(--topbar-h); padding: 0 40px; border-bottom: 1px solid var(--border); 
+  display: grid; grid-template-columns: 1.2fr auto 1.2fr; align-items: center; 
+  background: rgba(13, 15, 20, 0.98); backdrop-filter: blur(20px); 
+  position: sticky; top: 0; z-index: 1000; 
 }
 .topbar h2 { font-size: 20px; font-weight: 900; color: #fff; }
 
-/* 날짜 선택 박스 정렬 수정 */
+/* 상단 중앙 날짜 선택 박스 정렬 */
 .date-selectors { display: flex; gap: 10px; align-items: center; justify-content: center; }
 .grid-trigger { 
   background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; 
   padding: 10px 18px; cursor: pointer; font-size: 14px; font-weight: 700; color: #fff;
   display: flex; align-items: center; gap: 8px; transition: 0.2s;
 }
-.grid-trigger:hover { border-color: var(--accent); background: var(--surface); }
 
-/* 스티키 LNB */
+/* ★ 스티키 LNB (퀵 내비게이션) - 상단바 바로 아래 고정 ★ */
 .lnb-wrapper { 
-  position: sticky; top: var(--topbar-h); z-index: 100; 
+  position: sticky; top: var(--topbar-h); z-index: 900; 
   padding: 15px 40px; background: rgba(10, 12, 18, 0.95); 
   backdrop-filter: blur(15px); border-bottom: 1px solid var(--border); 
-  margin-bottom: 30px;
 }
 .lnb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; max-width: 1400px; margin: 0 auto; }
 .lnb-item { 
@@ -71,7 +71,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
 }
 .lnb-item:hover, .lnb-item.active { border-color: var(--accent); color: #fff; background: var(--accent-light); }
 
-.content { padding: 0 40px 60px 40px; max-width: 1400px; margin: 0 auto; width: 100%; }
+.content { padding: 40px; max-width: 1400px; margin: 0 auto; width: 100%; }
 
 /* 패널 & 횡형 카드 */
 .panel { scroll-margin-top: 160px; background: var(--bg2); border: 1px solid var(--border); border-radius: 24px; margin-bottom: 50px; overflow: hidden; }
@@ -87,7 +87,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
 .data-label { font-size: 11px; font-weight: 900; color: var(--text3); text-transform: uppercase; }
 .data-val { font-size: 14.5px; color: var(--text2); line-height: 1.6; }
 
-/* KPI 그리드 */
+/* KPI 그리드 박스 */
 .kpi-grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
 .kpi-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 28px; position: relative; transition: 0.3s; }
 .kpi-box:hover { border-color: var(--accent); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
@@ -95,15 +95,20 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
 .kpi-title { font-size: 17px; font-weight: 900; margin-bottom: 15px; color: #fff; padding-right: 60px; }
 .kpi-guide { font-size: 13.5px; color: var(--text2); line-height: 1.7; }
 
+/* 로그 터미널 */
+.log-terminal { background: #0a0c12; border-radius: 16px; padding: 25px; font-family: 'Fira Code', monospace; font-size: 12px; line-height: 1.6; border: 1px solid var(--border); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+.log-line { display: flex; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.03); padding: 8px 0; }
+.action-등록 { color: var(--green); } .action-수정 { color: var(--accent); } .action-삭제 { color: var(--red); }
+
+/* 공통 UI */
+.btn-reg { background: var(--accent); color: white; padding: 10px 20px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; }
+.selector-grid-popup { position: absolute; top: 55px; left: 50%; transform: translateX(-50%); background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 15px; display: none; grid-template-columns: repeat(4, 1fr); gap: 10px; z-index: 1100; width: 300px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
+.grid-item { padding: 12px; text-align: center; border-radius: 10px; background: var(--bg3); cursor: pointer; font-size: 13px; font-weight: 700; }
+.grid-item.active { background: var(--accent); color: white; }
+
 /* 모달 */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1500; backdrop-filter: blur(8px); }
 .modal { background: var(--bg2); width: 680px; border-radius: 32px; border: 1px solid var(--border); overflow: hidden; }
-.modal-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 16px; color: var(--text); margin-bottom: 20px; outline: none; }
-
-.btn-reg { background: var(--accent); color: white; padding: 10px 20px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; }
-.selector-grid-popup { position: absolute; top: 55px; left: 50%; transform: translateX(-50%); background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 15px; display: none; grid-template-columns: repeat(4, 1fr); gap: 10px; z-index: 1000; width: 300px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
-.grid-item { padding: 12px; text-align: center; border-radius: 10px; background: var(--bg3); cursor: pointer; font-size: 13px; font-weight: 700; color: var(--text2); }
-.grid-item.active { background: var(--accent); color: white; }
 </style>
 </head>
 <body onclick="closeAllPopups(event)">
@@ -135,6 +140,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
         <div class="nav-group-header" style="margin-top:20px;">주요 업무 (TASK)</div>
         <div id="m-task-tracking" class="nav-item" onclick="showView('tracking', 'task')">📊 월별 트래킹</div>
         <div id="m-task-history" class="nav-item" onclick="showView('history', 'task')">📅 연간 누적 현황</div>
+        <div id="m-task-logs" class="nav-item" onclick="showView('logs', 'task')">📜 변경 로그</div>
         
         <div class="nav-item" onclick="handleLogout()" style="margin-top: 40px; color: var(--red); opacity: 0.7;">🔓 LOGOUT</div>
       </div>
@@ -144,16 +150,10 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
       <div class="topbar">
         <h2 id="page-title">월별 트래킹</h2>
         <div class="date-selectors">
-          <div style="position: relative;">
-            <div class="grid-trigger" onclick="togglePopup(event, 'year-grid')"><span id="display-year">2026</span>년 ▾</div>
-            <div id="year-grid" class="selector-grid-popup"></div>
-          </div>
-          <div style="position: relative;">
-            <div class="grid-trigger" onclick="togglePopup(event, 'month-grid')"><span id="display-month">4월</span> ▾</div>
-            <div id="month-grid" class="selector-grid-popup"></div>
-          </div>
+          <div style="position: relative;"><div class="grid-trigger" onclick="togglePopup(event, 'year-grid')"><span id="display-year">2026</span>년 ▾</div><div id="year-grid" class="selector-grid-popup"></div></div>
+          <div style="position: relative;"><div class="grid-trigger" onclick="togglePopup(event, 'month-grid')"><span id="display-month">4월</span> ▾</div><div id="month-grid" class="selector-grid-popup"></div></div>
         </div>
-        <div style="text-align: right; color: var(--text3); font-size: 11px; font-family: monospace;">KPIA_OS_v14.5</div>
+        <div style="text-align: right; color: var(--text3); font-size: 11px; font-family: monospace;">KPIA_OS_v15.0</div>
       </div>
       <div id="sticky-lnb-area"></div>
       <div class="content" id="main-content"></div>
@@ -168,9 +168,9 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
       <input type="hidden" id="f-id">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div><label style="display:block; font-size:12px; color:var(--text3); margin-bottom:10px; font-weight:800;">대상 월</label><select id="f-month" class="modal-input" onchange="updateModalLabels()"></select></div>
-        <div><label id="label-team-type" style="display:block; font-size:12px; color:var(--text3); margin-bottom:10px; font-weight:800;">담당 분류</label><select id="f-team" class="modal-input" onchange="updateKpiOptions()"></select></div>
+        <div><label id="label-team-type" style="display:block; font-size:12px; color:var(--text3); margin-bottom:10px; font-weight:800;">분류</label><select id="f-team" class="modal-input" onchange="updateKpiOptions()"></select></div>
       </div>
-      <div><label style="display:block; font-size:12px; color:var(--text3); margin-bottom:10px; font-weight:800;">성과 항목</label><select id="f-kpi" class="modal-input"></select></div>
+      <div><label style="display:block; font-size:12px; color:var(--text3); margin-bottom:10px; font-weight:800;">항목</label><select id="f-kpi" class="modal-input"></select></div>
       <div><label id="label-last" style="display:block; font-size:12px; color:var(--green); margin-bottom:10px; font-weight:800;">실적 (전월)</label><textarea id="f-last" class="modal-input" style="height:100px;"></textarea></div>
       <div><label id="label-this" style="display:block; font-size:12px; color:var(--accent); margin-bottom:10px; font-weight:800;">계획 (금월)</label><textarea id="f-this" class="modal-input" style="height:100px;"></textarea></div>
       <div id="modal-footer" style="display:flex; gap:15px; margin-top:10px;"><button class="btn-reg" style="flex:2; padding:18px;" onclick="saveData()">데이터 저장</button><button id="del-btn" class="btn-reg" style="flex:1; background:var(--red);" onclick="deleteData()">삭제</button></div>
@@ -179,27 +179,15 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
 </div>
 
 <script>
-/* 1. 인증 및 이벤트 */
+/* 1. 인증 및 엔터키 지원 */
 function handleLogin() {
   const i = document.getElementById('login-id').value.toLowerCase();
   const p = document.getElementById('login-pw').value;
-  if (i === 'kpia' && p === 'kpia123!') {
-    sessionStorage.setItem('k_token_final', btoa(Date.now()));
-    checkAuth();
-  } else { alert("인증 정보가 올바르지 않습니다."); }
+  if (i === 'kpia' && p === 'kpia123!') { sessionStorage.setItem('k_token_final', btoa(Date.now())); checkAuth(); }
+  else { alert("인증 정보가 올바르지 않습니다."); }
 }
-
-// 엔터키 지원
 document.getElementById('login-pw').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
-document.getElementById('login-id').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
-
-function checkAuth() {
-  if (sessionStorage.getItem('k_token_final')) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('main-app').style.display = 'block';
-    updateDateDisplays(); render();
-  }
-}
+function checkAuth() { if (sessionStorage.getItem('k_token_final')) { document.getElementById('login-screen').style.display = 'none'; document.getElementById('main-app').style.display = 'block'; updateDateDisplays(); render(); } }
 
 /* 2. 데이터 정의 */
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -208,23 +196,23 @@ const KPI_DATA_FULL = {
   '기획홍보팀': [{ item:'신규 사업 개발' }, { item:'협회 언론 대응' }, { item:'최소 보도량 달성률' }, { item:'MWM 콘퍼런스' }, { item:'써클차트 브랜딩' }],
   '대외정책팀': [{ item:'정책파트너십 강화' }, { item:'이슈 공론화' }, { item:'법안 입법관리' }, { item:'정책 아이템 개발' }],
   '차트운영팀': [{ item:'클린 데이터 선행관리' }, { item:'운영 효율화' }, { item:'브랜딩' }, { item:'파트너십 수익 증대' }],
-  '경영지원팀': [{ item:'회계 투명성 확보' }, { item:'일반 관리 효율화' }, { item:'내부 회계 통제' }, { item:'인사/노무 관리' }],
+  '경영지원팀': [{ item:'외부 회계감사 대응' }, { item:'내부 통제 강화' }, { item:'보상금 회계 프로세스 구축' }],
   '개발파트': [{ item:'시스템 안정 운영' }, { item:'시스템 개선' }, { item:'시스템 클라우드 이전' }, { item:'정산분배 시스템 런칭' }]
 };
-const TASK_TEAMS = ['음악산업 지원확대', '입법 대응', '정책 기능 강화', '회원사 권익보호', '회원사 지원교류', '저작권 투명성 IT', '협회 자체 사업', '압도적 투명성 운영'];
+
+const TASK_TEAMS = ['음악산업 지원확대', '사업 환경 개선', '회원사 권익 보호', '회원사 지원 교류', '저작권 투명성 및 IT', '협회 자체 사업'];
 const TASK_DATA_FULL = {
-  '음악산업 지원확대': [{ item:'정부 대중음악 전담 조직 추진', owner:'우승현' },{ item:'K-뮤직 펀드 조성', owner:'전종봉' },{ item:'음악 예산 증대/아이템 발굴', owner:'임숙형' },{ item:'MD 수출 지원 정책 개발', owner:'김창규' }],
-  '입법 대응': [{ item:'대중법 일부개정 대응', owner:'최태영' },{ item:'안무저작권 표준계약서', owner:'전종봉' },{ item:'제작비 세액 공제 추진', owner:'최태영' },{ item:'AI 저작권 가이드 대응', owner:'김창규' }],
-  '정책 기능 강화': [{ item:'협회 정책연구소 설립', owner:'최태영' },{ item:'MWM 콘퍼런스 고도화', owner:'임숙형' },{ item:'국회 정책제안 포럼', owner:'전종봉' }],
-  '회원사 권익보호': [{ item:'52시간 유연 적용 추진', owner:'최태영' },{ item:'전송서비스 징수규정 대응', owner:'김창규' },{ item:'숏폼 징수규정 개정 대응', owner:'김창규' },{ item:'시상식 가이드라인 발효', owner:'전종봉' },{ item:'제작/판매 조세특례 추진', owner:'전종봉' }],
-  '회원사 지원교류': [{ item:'음악 특성 인력 양성', owner:'전종봉' },{ item:'음악산업 리브랜딩', owner:'임숙형' },{ item:'회원사 사업 활동 기획', owner:'임숙형' },{ item:'임직원 건강검진 지원', owner:'경영지원' }],
-  '저작권 투명성 IT': [{ item:'방송 음악 모니터링 시스템', owner:'김창규' },{ item:'음원-권리정보 통합DB', owner:'김창규' },{ item:'라이브러리 UCI 시스템',owner:'김창규' },{ item:'K-팝 음원코드 체계 정비', owner:'김창규' }],
-  '협회 자체 사업': [{ item:'써클차트 운영 및 고도화', owner:'정다운' },{ item:'K-팝 번역지원 서비스', owner:'정다운' }],
-  '압도적 투명성 운영': [{ item:'내부 회계 관리 제도 정비', owner:'이충근' },{ item:'회계 컨설팅 및 외부감사', owner:'최지원' }]
+  '음악산업 지원확대': [{ item:'정부 대중음악 전담 조직 추진', owner:'우승현' },{ item:'K-뮤직 펀드 조성', owner:'전종봉' },{ item:'음악 예산 증대/아이템 발굴', owner:'임숙형' }],
+  '사업 환경 개선': [{ item:'대중법 일부개정 대응', owner:'최태영' },{ item:'안무저작권 표준계약서', owner:'전종봉' },{ item:'AI 저작권 가이드 대응', owner:'김창규' }],
+  '회원사 권익 보호': [{ item:'52시간 유연 적용 추진', owner:'최태영' },{ item:'징수규정 개정 대응', owner:'김창규' },{ item:'시상식 가이드라인 발효', owner:'전종봉' }],
+  '회원사 지원 교류': [{ item:'음악 특성 인력 양성', owner:'전종봉' },{ item:'음악산업 리브랜딩', owner:'임숙형' }],
+  '저작권 투명성 및 IT': [{ item:'방송 음악 모니터링 시스템', owner:'김창규' },{ item:'음원-권리정보 통합DB', owner:'김창규' }],
+  '협회 자체 사업': [{ item:'써클차트 운영 및 고도화', owner:'정다운' },{ item:'K-팝 번역지원 서비스', owner:'정다운' }]
 };
 
 let currentYear = 2026, currentMonth = 3, currentView = 'tracking', currentCategory = 'kpi', currentHistoryTeam = KPI_TEAMS[0];
 let db = JSON.parse(localStorage.getItem('k_total_db_v6') || '[]');
+let logs = JSON.parse(localStorage.getItem('k_total_logs_v6') || '[]');
 
 function updateDateDisplays() {
   document.getElementById('display-year').textContent = currentYear;
@@ -239,7 +227,8 @@ function showView(view, category) {
   currentView = view; currentCategory = category;
   currentHistoryTeam = (category === 'kpi' ? KPI_TEAMS : TASK_TEAMS)[0];
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-  document.getElementById(`m-${category}-${view}`).classList.add('active');
+  const targetId = `m-${category}-${view}`;
+  if(document.getElementById(targetId)) document.getElementById(targetId).classList.add('active');
   render();
 }
 
@@ -251,6 +240,7 @@ function render() {
   
   lnbArea.innerHTML = "";
 
+  /* 1. 스티키 LNB 렌더링 */
   if (currentView === 'tracking' || currentView === 'history') {
     lnbArea.innerHTML = `
       <div class="lnb-wrapper">
@@ -264,7 +254,17 @@ function render() {
       </div>`;
   }
 
-  if (currentView === 'tracking') {
+  /* 2. 각 뷰별 렌더링 */
+  if (currentView === 'logs') {
+    const filtered = logs.filter(l => l.category === currentCategory.toUpperCase());
+    let html = `<div class="log-terminal">`;
+    filtered.forEach((l, i) => {
+      html += `<div class="log-line"><span>[${l.time}]</span> <span class="action-${l.action}">${l.action}</span> <span>@${l.team}</span> <span>${l.item}: ${l.details}</span></div>`;
+    });
+    contentContainer.innerHTML = html + `</div>`;
+  }
+
+  else if (currentView === 'tracking') {
     const mData = db.filter(d => d.type === currentCategory && d.year === currentYear && d.month === currentMonth);
     let html = "";
     teams.forEach((team, idx) => {
@@ -281,8 +281,8 @@ function render() {
                 ${k.owner ? `<div style="font-size:11px; color:var(--text3);">담당: ${k.owner}</div>` : ''}
               </div>
               <div class="card-data-stack">
-                <div class="data-row"><div class="data-label" style="color:var(--green);">[${currentMonth === 0 ? '12월' : currentMonth + '월'} 실적]</div><div class="data-val">${entry ? entry.lastDone : '<span style="opacity:0.2">기록된 실적 없음</span>'}</div></div>
-                <div class="data-row" style="margin-top:5px;"><div class="data-label" style="color:var(--accent);">[${currentMonth+1}월 계획]</div><div class="data-val">${entry ? entry.thisPlan : '<span style="opacity:0.2">수립된 계획 없음</span>'}</div></div>
+                <div class="data-row"><div class="data-label" style="color:var(--green);">[${currentMonth === 0 ? '12월' : currentMonth + '월'} 실적]</div><div class="data-val">${entry ? entry.lastDone : '<span style="opacity:0.2">기록 없음</span>'}</div></div>
+                <div class="data-row" style="margin-top:5px;"><div class="data-label" style="color:var(--accent);">[${currentMonth+1}월 계획]</div><div class="data-val">${entry ? entry.thisPlan : '<span style="opacity:0.2">계획 없음</span>'}</div></div>
               </div>
             </div>`;
           }).join('')}
@@ -292,76 +292,25 @@ function render() {
     contentContainer.innerHTML = html;
   }
 
-  else if (currentView === 'history') {
-    let html = "";
-    for(let m = 0; m < 12; m++) {
-      const hData = db.filter(d => d.type === currentCategory && d.year === currentYear && d.month === m && d.team === currentHistoryTeam);
-      if(hData.length > 0) {
-        html += `
-        <div style="margin-bottom:60px;">
-          <div style="display:flex; align-items:center; gap:15px; margin-bottom:25px;">
-            <span style="font-size:22px; font-weight:900; color:var(--orange);">${m+1}월 기록</span>
-            <div style="flex:1; height:1px; background:var(--border);"></div>
-          </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-            ${hData.map(d => `
-              <div class="panel" style="margin-bottom:0;">
-                <div class="panel-header" style="border:none; font-size:14px; color:var(--accent);">${d.item}</div>
-                <div style="padding:0 25px 25px;">
-                  <div class="data-row"><div class="data-label" style="color:var(--green);">[실적]</div><div class="data-val">${d.lastDone}</div></div>
-                  <div class="data-row"><div class="data-label" style="color:var(--accent);">[계획]</div><div class="data-val">${d.thisPlan}</div></div>
-                </div>
-              </div>`).join('')}
-          </div>
-        </div>`;
-      }
-    }
-    contentContainer.innerHTML = html;
-  }
-
   else if (currentView === 'kpilist') {
     const kpiGuideData = [
-        { team: '기획홍보팀', item: '신규 사업 런칭', weight: '35%', guide: '신규 비즈니스 모델 발굴 및 연간 목표 대비 신규 프로젝트 런칭 성과' },
-        { team: '기획홍보팀', item: '보도자료 배포 증대', weight: '25%', guide: '주요 이슈 대응 보도자료 배포 및 위기 관리 능력' },
-        { team: '기획홍보팀', item: '[보조]최소 보도량 달성률', weight: '5%', guide: '정기 보도자료 및 매체 노출 목표 수치 달성률' },
-        { team: '기획홍보팀', item: 'MWM 콘퍼런스 만족도 제고', weight: '20%', guide: '콘퍼런스 기획의 전문성 및 참가자 만족도 성과' },
-        { team: '기획홍보팀', item: '써클차트 브랜딩', weight: '15%', guide: '차트 인지도 제고를 위한 마케팅 캠페인 성과' },
-        { team: '대외정책팀', item: '정책파트너십 강화', weight: '20%', guide: '유관 기관 및 국회와의 정기적 네트워크 구축 수준' },
-        { team: '대외정책팀', item: '이슈 주도 공청회 개최', weight: '30%', guide: '산업 내 주요 현안 공청회 개최 및 여론 주도 성과' },
-        { team: '대외정책팀', item: '업계위한 정책 이슈 발굴', weight: '30%', guide: '신규 정책 아이템 개발' },
-        { team: '대외정책팀', item: '우호적 사업환경 입법대응', weight: '20%', guide: '불리한 입법 대응 및 규제 완화 기여도' },
-        { team: '차트운영팀', item: '클린 데이터 선행관리', weight: '30%', guide: '오류 건수 감소' },
-        { team: '차트운영팀', item: '운영 효율화', weight: '30%', guide: '개인 업무량 감소' },
-        { team: '차트운영팀', item: '써클차트 브랜딩', weight: '30%', guide: '전월 대비 유입량 증가' },
-        { team: '차트운영팀', item: '파트너십 수익 증대', weight: '15%', guide: '차트 데이터 매출 증대' },
-        { team: '경영지원팀', item: '외부 회계감사 대응', weight: '25%', guide: '회계 투명성 목표에 맞는 내부정책 수립 및 운영' },
-        { team: '경영지원팀', item: '내부 통제 강화', weight: '25%', guide: '7개 이상의 내부 통제 프로세스 도입' },
-        { team: '경영지원팀', item: '보상금 회계 프로세스 구축', weight: '25%', guide: '회계업무를 기한내 진행하는것을 목표' },
-        { team: '개발파트', item: '시스템 안정 운영', weight: '30%', guide: 'MTTR 50% 정량 + SOP 50% 정성' },
-        { team: '개발파트', item: '시스템 개선', weight: '20%', guide: '메이저 건 3건 이상 완료 + 수시 SLA 85%' },
-        { team: '개발파트', item: '시스템 클라우드 이전', weight: '25%', guide: '마일스톤 기한 내 달성' },
-        { team: '개발파트', item: '정산분배 시스템 런칭 안정화', weight: '25%', guide: '납기 완료 및 오픈 후 주요 장애 건수 최소화' }
+        { team: '기획홍보팀', item: '신규 사업 런칭', weight: '35%', guide: '신규 비즈니스 모델 발굴 및 연간 목표 대비 런칭 성과' },
+        { team: '기획홍보팀', item: '보도자료 배포 증대', weight: '25%', guide: '주요 이슈 대응 보도자료 배포 실적' },
+        { team: '기획홍보팀', item: '써클차트 브랜딩', weight: '15%', guide: '차트 인지도 제고 캠페인' },
+        { team: '대외정책팀', item: '정책파트너십 강화', weight: '20%', guide: '국회 및 정부 유관기관 네트워크 구축' },
+        { team: '차트운영팀', item: '클린 데이터 선행관리', weight: '30%', guide: '데이터 어뷰징 필터링 및 무결성 확보' },
+        { team: '경영지원팀', item: '외부 회계감사 대응', weight: '25%', guide: '회계 투명성 확보 및 외감 프로세스' },
+        { team: '개발파트', item: '시스템 안정 운영', weight: '30%', guide: '서버 가동률 유지 및 장애 복구 신속성' }
     ];
     let html = "";
     KPI_TEAMS.forEach(team => {
-      html += `
-      <div style="margin-bottom:40px;">
-        <div style="display:inline-block; background:var(--accent); color:#fff; font-size:12px; font-weight:900; padding:6px 16px; border-radius:30px; margin-bottom:15px; letter-spacing:1px;">${team}</div>
-        <div class="kpi-grid-container">
-          ${kpiGuideData.filter(d => d.team === team).map(k => `
-            <div class="kpi-box">
-              <div class="kpi-weight">${k.weight}</div>
-              <div class="kpi-title">${k.item}</div>
-              <div class="kpi-guide">${k.guide}</div>
-            </div>`).join('')}
-        </div>
-      </div>`;
+      html += `<div style="margin-bottom:40px;"><div style="display:inline-block; background:var(--accent); color:#fff; font-size:12px; font-weight:900; padding:6px 16px; border-radius:30px; margin-bottom:15px;">${team}</div><div class="kpi-grid-container">${kpiGuideData.filter(d => d.team === team).map(k => `<div class="kpi-box"><div class="kpi-weight">${k.weight}</div><div class="kpi-title">${k.item}</div><div class="kpi-guide">${k.guide}</div></div>`).join('')}</div></div>`;
     });
     contentContainer.innerHTML = html;
   }
 }
 
-/* 유틸리티 */
+/* 데이터 저장/모달 함수들 (기존 로직 유지) */
 function openModal(id = null, teamHint = null, itemHint = null, monthHint = null) {
   const fMonth = document.getElementById('f-month'), fTeam = document.getElementById('f-team');
   fMonth.innerHTML = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
@@ -372,7 +321,7 @@ function openModal(id = null, teamHint = null, itemHint = null, monthHint = null
     updateKpiOptions(); document.getElementById('f-kpi').value = d.item;
     document.getElementById('f-last').value = d.lastDone; document.getElementById('f-this').value = d.thisPlan;
   } else {
-    document.getElementById('f-id').value = ''; fMonth.value = monthHint !== null ? monthHint : currentMonth; fTeam.value = teamHint;
+    document.getElementById('f-id').value = ''; fMonth.value = monthHint; fTeam.value = teamHint;
     updateKpiOptions(); if(itemHint) document.getElementById('f-kpi').value = itemHint;
     document.getElementById('f-last').value = ''; document.getElementById('f-this').value = '';
   }
@@ -384,18 +333,16 @@ function updateKpiOptions() {
   const list = (currentCategory === 'kpi' ? KPI_DATA_FULL : TASK_DATA_FULL);
   document.getElementById('f-kpi').innerHTML = list[t] ? list[t].map(k => `<option value="${k.item}">${k.item}</option>`).join('') : '';
 }
-function updateModalLabels() { /* Label update logic here if needed */ }
 function saveData() {
-  const entry = { id: document.getElementById('f-id').value || Date.now(), type: currentCategory, year: currentYear, month: parseInt(document.getElementById('f-month').value), team: document.getElementById('f-team').value, item: document.getElementById('f-kpi').value, lastDone: document.getElementById('f-last').value, thisPlan: document.getElementById('f-this').value };
-  db = db.filter(d => String(d.id) !== String(entry.id)); db.push(entry);
-  localStorage.setItem('k_total_db_v6', JSON.stringify(db)); closeModal(); render();
+  const id = document.getElementById('f-id').value || Date.now();
+  const entry = { id, type: currentCategory, year: currentYear, month: parseInt(document.getElementById('f-month').value), team: document.getElementById('f-team').value, item: document.getElementById('f-kpi').value, lastDone: document.getElementById('f-last').value, thisPlan: document.getElementById('f-this').value };
+  db = db.filter(d => String(d.id) !== String(id)); db.push(entry);
+  localStorage.setItem('k_total_db_v6', JSON.stringify(db));
+  logs.unshift({ time: new Date().toLocaleString(), action: id ? '수정' : '등록', category: currentCategory, team: entry.team, item: entry.item, details: '내용 저장됨' });
+  localStorage.setItem('k_total_logs_v6', JSON.stringify(logs));
+  closeModal(); render();
 }
-function deleteData() {
-  if(confirm('삭제하시겠습니까?')) {
-    db = db.filter(d => String(d.id) !== String(document.getElementById('f-id').value));
-    localStorage.setItem('k_total_db_v6', JSON.stringify(db)); closeModal(); render();
-  }
-}
+function deleteData() { if(confirm('삭제?')) { db = db.filter(d => String(d.id) !== String(document.getElementById('f-id').value)); localStorage.setItem('k_total_db_v6', JSON.stringify(db)); closeModal(); render(); } }
 function togglePopup(e, id) { e.stopPropagation(); document.querySelectorAll('.selector-grid-popup').forEach(p => p.style.display = 'none'); document.getElementById(id).style.display = 'grid'; }
 function closeAllPopups() { document.querySelectorAll('.selector-grid-popup').forEach(p => p.style.display = 'none'); }
 function handleLogout() { sessionStorage.clear(); location.reload(); }
