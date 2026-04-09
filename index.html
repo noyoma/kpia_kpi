@@ -90,17 +90,17 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
 /* LNB - 고정 위치 (flex-shrink: 0으로 항상 표시) */
 .lnb-wrapper {
   flex-shrink: 0;
-  padding: 14px 40px;
+  padding: 12px 24px;
   background: rgba(10, 12, 18, 0.97);
   backdrop-filter: blur(15px);
   border-bottom: 1px solid var(--border);
   z-index: 900;
 }
-.lnb-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.lnb-grid { display: grid; grid-template-columns: repeat(var(--lnb-cols, 5), 1fr); gap: 8px; }
 .lnb-item {
-  background: var(--bg3); border: 1px solid var(--border); padding: 10px 16px; border-radius: 10px;
-  font-size: 11px; font-weight: 800; text-align: center; cursor: pointer; transition: 0.2s; color: var(--text2);
-  white-space: nowrap;
+  background: var(--bg3); border: 1px solid var(--border); padding: 13px 8px; border-radius: 10px;
+  font-size: 13px; font-weight: 800; text-align: center; cursor: pointer; transition: 0.2s; color: var(--text2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .lnb-item:hover, .lnb-item.active { border-color: var(--accent); color: #fff; background: var(--accent-light); }
 
@@ -123,20 +123,22 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
 .kpi-grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding: 25px; }
 .kpi-team-label { grid-column: 1 / -1; margin-top: 20px; color: var(--accent); font-weight: 900; font-size: 14px; padding-bottom: 5px; border-bottom: 1px solid var(--accent-light); }
 .kpi-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 25px; position: relative; transition: 0.3s; }
-.kpi-box:hover { border-color: var(--accent); transform: translateY(-5px); }
+.kpi-box:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-5px); }
 .kpi-weight-tag { position: absolute; top: 20px; right: 20px; background: var(--orange-light); color: var(--orange); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 900; }
 .kpi-box-title { font-size: 16px; font-weight: 900; color: #fff; margin-bottom: 12px; padding-right: 60px; }
 .kpi-box-guide { font-size: 13px; color: var(--text2); line-height: 1.6; }
 
 /* 횡형 리스트 카드 */
 .tracking-card-wide {
-  background: var(--bg3); border-radius: 18px; padding: 22px 30px; border: 1px solid transparent;
-  display: grid; grid-template-columns: 260px 1fr; gap: 30px; align-items: start; transition: 0.2s; margin: 10px 25px; cursor: pointer;
+  background: var(--bg3); border-radius: 18px; padding: 22px 30px; border: 1px solid var(--border);
+  display: grid; grid-template-columns: 240px 1fr; gap: 30px; align-items: start; transition: 0.2s; margin: 10px 25px; cursor: pointer;
 }
-.tracking-card-wide:hover { border-color: var(--accent); transform: translateY(-2px); }
+.tracking-card-wide:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
 
+.data-stack { display: flex; flex-direction: column; gap: 14px; }
+.data-block { display: flex; flex-direction: column; gap: 4px; }
 .data-row { display: grid; grid-template-columns: 70px 1fr; margin-bottom: 8px; gap: 8px; }
-.data-label { font-size: 11px; font-weight: 900; padding-top: 2px; }
+.data-label { font-size: 11px; font-weight: 900; }
 .data-val { font-size: 13px; color: var(--text2); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
 
 /* 연간 누적 현황 */
@@ -144,8 +146,8 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
 .history-month-title { color: var(--orange); font-size: 18px; font-weight: 900; margin-bottom: 20px; display: flex; align-items: center; }
 .history-items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
 .history-item-card { background: var(--bg3); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: 0.2s; }
-.history-item-card:hover { border-color: var(--accent); }
-.history-item-header { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 900; color: var(--accent); }
+.history-item-card:hover { border-color: rgba(255,255,255,0.2); }
+.history-item-header { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 900; color: var(--text); }
 .history-item-body { padding: 14px 20px; }
 
 /* 로그 카드 */
@@ -224,6 +226,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
             <div id="m-kpi-tracking" class="nav-item active" onclick="showView('tracking','kpi')">📊 월별 트래킹</div>
             <div id="m-kpi-history" class="nav-item" onclick="showView('history','kpi')">📅 연간 누적 현황</div>
             <div id="m-kpi-kpilist" class="nav-item" onclick="showView('kpilist','kpi')">📋 KPI Overview</div>
+
             <div id="m-kpi-logs" class="nav-item" onclick="showView('logs','kpi')">📜 변경 로그</div>
           </div>
         </div>
@@ -412,10 +415,13 @@ const TASK_DATA_FULL = {
 const KPI_GUIDE_DATA = [
   { team:'기획홍보팀', item:'신규 사업 개발', weight:'35%', guide:'신규 비즈니스 모델 발굴 및 연간 목표 대비 신규 프로젝트 런칭 성과' },
   { team:'기획홍보팀', item:'협회 언론 대응', weight:'25%', guide:'주요 이슈 대응 보도자료 배포 및 위기 관리 능력 정성 평가' },
+  { team:'기획홍보팀', item:'협회 언론 대응', weight:'25%', guide:'주요 이슈 대응 보도자료 배포 및 위기 관리 능력' },
   { team:'기획홍보팀', item:'최소 보도량 달성률', weight:'5%', guide:'정기 보도자료 및 매체 노출 목표 수치 달성률' },
   { team:'기획홍보팀', item:'MWM 콘퍼런스', weight:'20%', guide:'콘퍼런스 기획의 전문성 및 참가자 만족도 목표 달성' },
+  { team:'기획홍보팀', item:'MWM 콘퍼런스', weight:'20%', guide:'콘퍼런스 기획의 전문성 및 참가자 만족도 성과' },
   { team:'기획홍보팀', item:'써클차트 브랜딩', weight:'15%', guide:'차트 인지도 제고를 위한 마케팅 캠페인 성과' },
   { team:'대외정책팀', item:'정책파트너십 강화', weight:'20%', guide:'유관 기관 및 국회, 정부 부처와의 정기적 네트워크 구축 수준' },
+  { team:'대외정책팀', item:'정책파트너십 강화', weight:'20%', guide:'유관 기관 및 국회와의 정기적 네트워크 구축 수준' },
   { team:'대외정책팀', item:'이슈 공론화', weight:'30%', guide:'산업 내 주요 현안 공청회 개최 및 여론 주도 성과' },
   { team:'대외정책팀', item:'법안 입법관리', weight:'20%', guide:'우호적 사업 환경 조성을 위한 입법 대응 논리 개발 및 실적' },
   { team:'대외정책팀', item:'정책 아이템 개발', weight:'30%', guide:'업계를 위한 신규 정책 아이템 발굴 및 제도 개선 요구안' },
@@ -430,7 +436,8 @@ const KPI_GUIDE_DATA = [
   { team:'개발파트', item:'시스템 안정 운영', weight:'30%', guide:'서버 가동률 유지 및 장애 발생 시 복구 신속성(MTTR)' },
   { team:'개발파트', item:'시스템 개선', weight:'20%', guide:'사용자 편의성 증대를 위한 UI/UX 및 기능 고도화' },
   { team:'개발파트', item:'시스템 클라우드 이전', weight:'20%', guide:'인프라 현대화를 위한 클라우드 마이그레이션 진척도' },
-  { team:'개발파트', item:'정산분배 시스템 런칭', weight:'30%', guide:'정산 시스템 설계 및 성공적 런칭을 통한 투명성 기여' }
+  { team:'개발파트', item:'정산분배 시스템 런칭', weight:'30%', guide:'정산 시스템 설계 및 성공적 런칭을 통한 투명성 기여' },
+  { team:'개발파트', item:'시스템 안정 운영', weight:'30%', guide:'서버 가동률 유지 및 장애 발생 시 복구 신속성' }
 ];
 
 /* ===========================
@@ -519,7 +526,8 @@ function renderLNB(teams, activeTeam, onClickFn) {
     return;
   }
   lnbArea.style.display = 'block';
-  lnbArea.innerHTML = '<div class="lnb-grid">' +
+  const cols = teams.length;
+  lnbArea.innerHTML = '<div class="lnb-grid" style="--lnb-cols:' + cols + '">' +
     teams.map(function(t) {
       return '<div class="lnb-item ' + (t === activeTeam ? 'active' : '') + '" onclick="' + onClickFn + '(\'' + t.replace(/'/g, "\\'") + '\')">' + t + '</div>';
     }).join('') +
@@ -640,14 +648,24 @@ function render() {
               const lastDone = entry ? escapeHtml(entry.lastDone) : '<span style="color:var(--text3);">-</span>';
               const thisPlan = entry ? escapeHtml(entry.thisPlan) : '<span style="color:var(--text3);">-</span>';
               const ownerHtml = k.owner ? '<div style="font-size:11px; color:var(--text3); margin-top:4px;">담당: ' + k.owner + '</div>' : '';
+              const prevM = currentMonth === 0 ? 11 : currentMonth - 1;
+              const prevMonthLabel = MONTHS[prevM] + ' 실적';
+              const thisMonthLabel = MONTHS[currentMonth] + ' 계획';
               return '<div class="tracking-card-wide" onclick="openModal(\'' + entryId + '\',\'' + team.replace(/'/g, "\\'") + '\',\'' + k.item.replace(/'/g, "\\'") + '\')">' +
-                '<div style="border-right:1px solid rgba(255,255,255,0.05); padding-right:20px;">' +
+                '<div style="border-right:1px solid rgba(255,255,255,0.06); padding-right:20px;">' +
                   '<div style="font-weight:900; color:#fff; font-size:15px;">' + k.item + '</div>' +
                   ownerHtml +
                 '</div>' +
-                '<div>' +
-                  '<div class="data-row"><div class="data-label" style="color:var(--green);">[실적]</div><div class="data-val">' + lastDone + '</div></div>' +
-                  '<div class="data-row"><div class="data-label" style="color:var(--accent);">[계획]</div><div class="data-val">' + thisPlan + '</div></div>' +
+                '<div class="data-stack">' +
+                  '<div class="data-block">' +
+                    '<div class="data-label" style="color:var(--green);">' + prevMonthLabel + '</div>' +
+                    '<div class="data-val">' + lastDone + '</div>' +
+                  '</div>' +
+                  '<div style="height:1px; background:rgba(255,255,255,0.05);"></div>' +
+                  '<div class="data-block">' +
+                    '<div class="data-label" style="color:var(--accent);">' + thisMonthLabel + '</div>' +
+                    '<div class="data-val">' + thisPlan + '</div>' +
+                  '</div>' +
                 '</div>' +
               '</div>';
             }).join('')
