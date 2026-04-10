@@ -535,9 +535,43 @@ window.onFirebaseLogin = function(user) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
   updateDateDisplays();
+  attachDelegatedHandlers();
   subscribeFirestore();
   render();
 };
+
+// 이벤트 위임 — data-action 속성을 가진 요소 클릭 처리
+// HTML 문자열에 사용자 제어 데이터를 onclick으로 직접 삽입하지 않기 위한 방어
+let delegatedHandlersAttached = false;
+function attachDelegatedHandlers() {
+  if (delegatedHandlersAttached) return;
+  delegatedHandlersAttached = true;
+  document.getElementById('main-app').addEventListener('click', function(e) {
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    const action = el.getAttribute('data-action');
+    switch (action) {
+      case 'open-modal': {
+        const id = el.getAttribute('data-id') || null;
+        const team = el.getAttribute('data-team') || null;
+        const item = el.getAttribute('data-item') || null;
+        e.stopPropagation();
+        openModal(id, team, item);
+        break;
+      }
+      case 'scroll-section': {
+        const team = el.getAttribute('data-team');
+        if (team) scrollToSection(team);
+        break;
+      }
+      case 'select-history-team': {
+        const team = el.getAttribute('data-team');
+        if (team) selectHistoryTeam(team);
+        break;
+      }
+    }
+  });
+}
 window.onFirebaseLogout = function() {
   currentUser = null;
   if (unsubRecords) { unsubRecords(); unsubRecords = null; }
@@ -623,7 +657,7 @@ function showView(view, category) {
 /* ===========================
    5. LNB 렌더
    =========================== */
-function renderLNB(teams, activeTeam, onClickFn) {
+function renderLNB(teams, activeTeam, actionName) {
   const lnbArea = document.getElementById('lnb-area');
   if (!teams || teams.length === 0) {
     lnbArea.style.display = 'none';
@@ -633,7 +667,8 @@ function renderLNB(teams, activeTeam, onClickFn) {
   const cols = teams.length;
   lnbArea.innerHTML = '<div class="lnb-grid" style="--lnb-cols:' + cols + '">' +
     teams.map(function(t) {
-      return '<div class="lnb-item ' + (t === activeTeam ? 'active' : '') + '" onclick="' + onClickFn + '(\'' + t.replace(/'/g, "\\'") + '\')">' + t + '</div>';
+      const activeCls = (t === activeTeam) ? ' active' : '';
+      return '<div class="lnb-item' + activeCls + '" data-action="' + escapeAttr(actionName) + '" data-team="' + escapeAttr(t) + '">' + escapeHtml(t) + '</div>';
     }).join('') +
     '</div>';
 }
@@ -649,9 +684,9 @@ function render() {
 
   // LNB
   if (currentView === 'tracking') {
-    renderLNB(teams, null, 'scrollToSection');
+    renderLNB(teams, null, 'scroll-section');
   } else if (currentView === 'history') {
-    renderLNB(teams, currentHistoryTeam, 'selectHistoryTeam');
+    renderLNB(teams, currentHistoryTeam, 'select-history-team');
   } else {
     document.getElementById('lnb-area').style.display = 'none';
   }
@@ -662,15 +697,18 @@ function render() {
     if (filtered.length === 0) {
       container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📜</div><div>기록이 없습니다.</div></div>';
     } else {
+      // tag 클래스는 화이트리스트로만 허용하여 CSS 클래스 주입 방지
+      const ALLOWED_ACTIONS = { '등록': '등록', '수정': '수정', '삭제': '삭제' };
       container.innerHTML = filtered.map(function(l) {
+        const safeAction = ALLOWED_ACTIONS[l.action] || '기타';
         return '<div class="log-card">' +
           '<div class="log-header">' +
             '<div style="display:flex; align-items:center; gap:10px;">' +
-              '<span class="log-tag tag-' + l.action + '">' + l.action + '</span>' +
-              '<span style="color:var(--text3); font-size:11px;">' + l.time + '</span>' +
-              '<span style="font-size:13px; font-weight:900;">' + l.team + ' — ' + l.item + '</span>' +
+              '<span class="log-tag tag-' + escapeAttr(safeAction) + '">' + escapeHtml(safeAction) + '</span>' +
+              '<span style="color:var(--text3); font-size:11px;">' + escapeHtml(l.time) + '</span>' +
+              '<span style="font-size:13px; font-weight:900;">' + escapeHtml(l.team) + ' — ' + escapeHtml(l.item) + '</span>' +
             '</div>' +
-            '<span style="font-size:11px; color:var(--accent);">UID: ' + l.user + '</span>' +
+            '<span style="font-size:11px; color:var(--accent);">UID: ' + escapeHtml(l.user) + '</span>' +
           '</div>' +
           '<div class="log-body">' + escapeHtml(l.details) + '</div>' +
         '</div>';
@@ -683,12 +721,12 @@ function render() {
   if (currentView === 'kpilist') {
     let html = '<div class="kpi-grid-container">';
     KPI_TEAMS.forEach(function(team) {
-      html += '<div class="kpi-team-label">' + team + '</div>';
+      html += '<div class="kpi-team-label">' + escapeHtml(team) + '</div>';
       KPI_GUIDE_DATA.filter(function(d) { return d.team === team; }).forEach(function(k) {
         html += '<div class="kpi-box">' +
-          '<div class="kpi-weight-tag">' + k.weight + '</div>' +
-          '<div class="kpi-box-title">' + k.item + '</div>' +
-          '<div class="kpi-box-guide">' + k.guide + '</div>' +
+          '<div class="kpi-weight-tag">' + escapeHtml(k.weight) + '</div>' +
+          '<div class="kpi-box-title">' + escapeHtml(k.item) + '</div>' +
+          '<div class="kpi-box-guide">' + escapeHtml(k.guide) + '</div>' +
         '</div>';
       });
     });
@@ -708,11 +746,11 @@ function render() {
       if (hData.length > 0) {
         hasAny = true;
         html += '<div class="history-month-block">' +
-          '<div class="history-month-title">' + MONTHS[m] + ' <span class="month-badge">RECORD</span></div>' +
+          '<div class="history-month-title">' + escapeHtml(MONTHS[m]) + ' <span class="month-badge">RECORD</span></div>' +
           '<div class="history-items-grid">' +
           hData.map(function(d) {
-            return '<div class="history-item-card" onclick="openModal(\'' + d.id + '\')">' +
-              '<div class="history-item-header">' + d.item + '</div>' +
+            return '<div class="history-item-card" data-action="open-modal" data-id="' + escapeAttr(d.id) + '">' +
+              '<div class="history-item-header">' + escapeHtml(d.item) + '</div>' +
               '<div class="history-item-body">' +
                 '<div class="data-row"><div class="data-label" style="color:var(--green);">[실적]</div><div class="data-val">' + escapeHtml(d.lastDone) + '</div></div>' +
                 '<div class="data-row"><div class="data-label" style="color:var(--accent);">[계획]</div><div class="data-val">' + escapeHtml(d.thisPlan) + '</div></div>' +
@@ -723,7 +761,7 @@ function render() {
       }
     }
     if (!hasAny) {
-      html += '<div class="empty-state"><div class="empty-state-icon">📅</div><div>' + currentHistoryTeam + '의 ' + currentYear + '년 기록이 없습니다.</div></div>';
+      html += '<div class="empty-state"><div class="empty-state-icon">📅</div><div>' + escapeHtml(currentHistoryTeam) + '의 ' + currentYear + '년 기록이 없습니다.</div></div>';
     }
     html += '</div>';
     container.innerHTML = html;
@@ -740,8 +778,8 @@ function render() {
       const items = dataList[team] || [];
       return '<div class="panel" id="sec-' + idx + '">' +
         '<div class="panel-header">' +
-          '<span>' + team + ' <span class="month-badge">' + MONTHS[currentMonth] + '</span></span>' +
-          '<button class="btn-reg" onclick="openModal(null,\'' + team.replace(/'/g, "\\'") + '\')">+ 등록</button>' +
+          '<span>' + escapeHtml(team) + ' <span class="month-badge">' + escapeHtml(MONTHS[currentMonth]) + '</span></span>' +
+          '<button class="btn-reg" data-action="open-modal" data-team="' + escapeAttr(team) + '">+ 등록</button>' +
         '</div>' +
         '<div class="panel-body">' +
         (items.length === 0
@@ -751,23 +789,26 @@ function render() {
               const entryId = entry ? String(entry.id) : '';
               const lastDone = entry ? escapeHtml(entry.lastDone) : '<span style="color:var(--text3);">-</span>';
               const thisPlan = entry ? escapeHtml(entry.thisPlan) : '<span style="color:var(--text3);">-</span>';
-              const ownerHtml = k.owner ? '<div style="font-size:11px; color:var(--text3); margin-top:4px;">담당: ' + k.owner + '</div>' : '';
+              const ownerHtml = k.owner ? '<div style="font-size:11px; color:var(--text3); margin-top:4px;">담당: ' + escapeHtml(k.owner) + '</div>' : '';
               const prevM = currentMonth === 0 ? 11 : currentMonth - 1;
               const prevMonthLabel = MONTHS[prevM] + ' 실적';
               const thisMonthLabel = MONTHS[currentMonth] + ' 계획';
-              return '<div class="tracking-card-wide" onclick="openModal(\'' + entryId + '\',\'' + team.replace(/'/g, "\\'") + '\',\'' + k.item.replace(/'/g, "\\'") + '\')">' +
+              return '<div class="tracking-card-wide" data-action="open-modal"' +
+                  ' data-id="' + escapeAttr(entryId) + '"' +
+                  ' data-team="' + escapeAttr(team) + '"' +
+                  ' data-item="' + escapeAttr(k.item) + '">' +
                 '<div style="border-right:1px solid rgba(255,255,255,0.06); padding-right:20px;">' +
-                  '<div style="font-weight:900; color:#fff; font-size:15px;">' + k.item + '</div>' +
+                  '<div style="font-weight:900; color:#fff; font-size:15px;">' + escapeHtml(k.item) + '</div>' +
                   ownerHtml +
                 '</div>' +
                 '<div class="data-stack">' +
                   '<div class="data-block">' +
-                    '<div class="data-label" style="color:var(--green);">' + prevMonthLabel + '</div>' +
+                    '<div class="data-label" style="color:var(--green);">' + escapeHtml(prevMonthLabel) + '</div>' +
                     '<div class="data-val">' + lastDone + '</div>' +
                   '</div>' +
                   '<div style="height:1px; background:rgba(255,255,255,0.05);"></div>' +
                   '<div class="data-block">' +
-                    '<div class="data-label" style="color:var(--accent);">' + thisMonthLabel + '</div>' +
+                    '<div class="data-label" style="color:var(--accent);">' + escapeHtml(thisMonthLabel) + '</div>' +
                     '<div class="data-val">' + thisPlan + '</div>' +
                   '</div>' +
                 '</div>' +
@@ -1044,14 +1085,21 @@ function exportToExcel() {
 /* ===========================
    12. 유틸
    =========================== */
+// HTML 텍스트 컨텍스트용 이스케이프 — 요소 내부 텍스트에 삽입할 때 사용
 function escapeHtml(str) {
-  if (!str) return '';
+  if (str === null || str === undefined) return '';
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// HTML 속성 컨텍스트용 이스케이프 — 쌍따옴표로 감싼 속성값 내부에 삽입할 때 사용
+// escapeHtml과 동일한 규칙이지만 의미 명확화를 위해 분리
+function escapeAttr(str) {
+  return escapeHtml(str);
 }
 
 /* ===========================
