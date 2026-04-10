@@ -6,6 +6,48 @@
 <title>KPIA 통합 성과 및 업무 관리 시스템</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@100;300;400;600;700;900&display=swap" rel="stylesheet">
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+  import {
+    getFirestore, collection, doc, setDoc, deleteDoc, addDoc,
+    onSnapshot, serverTimestamp, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCXVfZHtttvk3ebnnDzksamyEH1WzfrUzs",
+    authDomain: "kpiakpi.firebaseapp.com",
+    projectId: "kpiakpi",
+    storageBucket: "kpiakpi.firebasestorage.app",
+    messagingSenderId: "265859880804",
+    appId: "1:265859880804:web:dbd820b3e2591997254c71"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db_fs = getFirestore(app);
+
+  // 전역 노출 — 기존 onclick 핸들러들이 window 스코프에서 호출되므로
+  window.fb = {
+    auth, db_fs,
+    signInWithEmailAndPassword, signOut, onAuthStateChanged,
+    collection, doc, setDoc, deleteDoc, addDoc,
+    onSnapshot, serverTimestamp, query, orderBy
+  };
+
+  // Auth 상태 변화 감지 — 로그인/로그아웃 시 앱 초기화·정리
+  onAuthStateChanged(auth, function(user) {
+    if (user) {
+      if (typeof window.onFirebaseLogin === 'function') window.onFirebaseLogin(user);
+    } else {
+      if (typeof window.onFirebaseLogout === 'function') window.onFirebaseLogout();
+    }
+  });
+</script>
+
 <style>
 :root {
   --bg: #0d0f14; --bg2: #141720; --bg3: #1c2030;
@@ -197,9 +239,10 @@ body { background: var(--bg); color: var(--text); font-family: 'Pretendard', san
       <circle cx="78" cy="22" r="3.5"/>
     </svg>
     <div style="font-size:15px; font-weight:900; margin-bottom:30px; color:var(--text3);">MANAGEMENT SYSTEM</div>
-    <input type="text" id="login-id" class="modal-input" placeholder="ID (kpia)" autocomplete="username">
-    <input type="password" id="login-pw" class="modal-input" placeholder="PASSWORD (kpia123!)" autocomplete="current-password">
+    <input type="email" id="login-id" class="modal-input" placeholder="EMAIL" autocomplete="username">
+    <input type="password" id="login-pw" class="modal-input" placeholder="PASSWORD" autocomplete="current-password">
     <button class="btn-reg" style="width:100%; padding:20px; font-size:15px;" onclick="handleLogin()">LOG IN</button>
+    <div id="login-error" style="color:var(--red); font-size:12px; margin-top:12px; min-height:16px;"></div>
   </div>
 </div>
 
@@ -448,46 +491,143 @@ let currentCategory = 'kpi';
 let currentHistoryTeam = KPI_TEAMS[0];
 let db = [];
 let logs = [];
-
-function loadStorage() {
-  try { db = JSON.parse(localStorage.getItem('k_total_db_vfinal') || '[]'); } catch(e) { db = []; }
-  try { logs = JSON.parse(localStorage.getItem('k_total_logs_vfinal') || '[]'); } catch(e) { logs = []; }
-}
-function saveDB() { localStorage.setItem('k_total_db_vfinal', JSON.stringify(db)); }
-function saveLogs() { localStorage.setItem('k_total_logs_vfinal', JSON.stringify(logs)); }
+let currentUser = null;
+let unsubRecords = null;
+let unsubLogs = null;
 
 /* ===========================
-   3. 인증
+   3. 인증 (Firebase Auth)
    =========================== */
 function handleLogin() {
-  const id = document.getElementById('login-id').value.trim().toLowerCase();
+  const email = document.getElementById('login-id').value.trim();
   const pw = document.getElementById('login-pw').value;
-  if (id === 'kpia' && pw === 'kpia123!') {
-    sessionStorage.setItem('k_uid', id);
-    sessionStorage.setItem('k_auth_vfinal', btoa(String(Date.now())));
-    initApp();
-  } else {
-    alert('아이디 혹은 비밀번호가 틀립니다.');
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!email || !pw) {
+    errEl.textContent = '이메일과 비밀번호를 입력해주세요.';
+    return;
   }
+  window.fb.signInWithEmailAndPassword(window.fb.auth, email, pw)
+    .catch(function(err) {
+      const map = {
+        'auth/invalid-credential': '이메일 또는 비밀번호가 올바르지 않습니다.',
+        'auth/invalid-email': '올바른 이메일 형식이 아닙니다.',
+        'auth/user-not-found': '등록되지 않은 사용자입니다.',
+        'auth/wrong-password': '비밀번호가 올바르지 않습니다.',
+        'auth/too-many-requests': '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.',
+        'auth/network-request-failed': '네트워크 오류가 발생했습니다.'
+      };
+      errEl.textContent = map[err.code] || ('로그인 실패: ' + err.code);
+    });
 }
 document.getElementById('login-pw').addEventListener('keypress', function(e) {
   if (e.key === 'Enter') handleLogin();
 });
 function handleLogout() {
-  sessionStorage.clear();
-  location.reload();
+  window.fb.signOut(window.fb.auth).then(function() {
+    location.reload();
+  });
 }
-function checkAuth() {
-  if (sessionStorage.getItem('k_auth_vfinal')) {
-    initApp();
-  }
-}
-function initApp() {
-  loadStorage();
+
+// Firebase Auth 상태 변경 콜백 — index.html 상단 module 스크립트에서 호출됨
+window.onFirebaseLogin = function(user) {
+  currentUser = user;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
   updateDateDisplays();
+  attachDelegatedHandlers();
+  subscribeFirestore();
   render();
+};
+
+// 이벤트 위임 — data-action 속성을 가진 요소 클릭 처리
+// HTML 문자열에 사용자 제어 데이터를 onclick으로 직접 삽입하지 않기 위한 방어
+let delegatedHandlersAttached = false;
+function attachDelegatedHandlers() {
+  if (delegatedHandlersAttached) return;
+  delegatedHandlersAttached = true;
+  document.getElementById('main-app').addEventListener('click', function(e) {
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    const action = el.getAttribute('data-action');
+    switch (action) {
+      case 'open-modal': {
+        const id = el.getAttribute('data-id') || null;
+        const team = el.getAttribute('data-team') || null;
+        const item = el.getAttribute('data-item') || null;
+        e.stopPropagation();
+        openModal(id, team, item);
+        break;
+      }
+      case 'scroll-section': {
+        const team = el.getAttribute('data-team');
+        if (team) scrollToSection(team);
+        break;
+      }
+      case 'select-history-team': {
+        const team = el.getAttribute('data-team');
+        if (team) selectHistoryTeam(team);
+        break;
+      }
+    }
+  });
+}
+window.onFirebaseLogout = function() {
+  currentUser = null;
+  if (unsubRecords) { unsubRecords(); unsubRecords = null; }
+  if (unsubLogs) { unsubLogs(); unsubLogs = null; }
+  db = [];
+  logs = [];
+};
+
+/* ===========================
+   3b. Firestore 구독
+   =========================== */
+function subscribeFirestore() {
+  const fb = window.fb;
+
+  // records 컬렉션 실시간 구독
+  const recordsRef = fb.collection(fb.db_fs, 'records');
+  unsubRecords = fb.onSnapshot(recordsRef, function(snap) {
+    db = snap.docs.map(function(d) {
+      const data = d.data();
+      return {
+        id: d.id,
+        type: data.type,
+        year: data.year,
+        month: data.month,
+        team: data.team,
+        item: data.item,
+        lastDone: data.lastDone || '',
+        thisPlan: data.thisPlan || ''
+      };
+    });
+    render();
+  }, function(err) {
+    console.error('records 구독 오류:', err);
+    alert('데이터 로드 실패: ' + err.message);
+  });
+
+  // logs 컬렉션 실시간 구독 (최신순)
+  const logsRef = fb.query(fb.collection(fb.db_fs, 'logs'), fb.orderBy('createdAt', 'desc'));
+  unsubLogs = fb.onSnapshot(logsRef, function(snap) {
+    logs = snap.docs.map(function(d) {
+      const data = d.data();
+      return {
+        id: d.id,
+        time: data.time,
+        action: data.action,
+        category: data.category,
+        team: data.team,
+        item: data.item,
+        details: data.details,
+        user: data.user
+      };
+    });
+    if (currentView === 'logs') render();
+  }, function(err) {
+    console.error('logs 구독 오류:', err);
+  });
 }
 
 /* ===========================
@@ -517,7 +657,7 @@ function showView(view, category) {
 /* ===========================
    5. LNB 렌더
    =========================== */
-function renderLNB(teams, activeTeam, onClickFn) {
+function renderLNB(teams, activeTeam, actionName) {
   const lnbArea = document.getElementById('lnb-area');
   if (!teams || teams.length === 0) {
     lnbArea.style.display = 'none';
@@ -527,7 +667,8 @@ function renderLNB(teams, activeTeam, onClickFn) {
   const cols = teams.length;
   lnbArea.innerHTML = '<div class="lnb-grid" style="--lnb-cols:' + cols + '">' +
     teams.map(function(t) {
-      return '<div class="lnb-item ' + (t === activeTeam ? 'active' : '') + '" onclick="' + onClickFn + '(\'' + t.replace(/'/g, "\\'") + '\')">' + t + '</div>';
+      const activeCls = (t === activeTeam) ? ' active' : '';
+      return '<div class="lnb-item' + activeCls + '" data-action="' + escapeAttr(actionName) + '" data-team="' + escapeAttr(t) + '">' + escapeHtml(t) + '</div>';
     }).join('') +
     '</div>';
 }
@@ -536,16 +677,16 @@ function renderLNB(teams, activeTeam, onClickFn) {
    6. 메인 렌더
    =========================== */
 function render() {
-  if (!sessionStorage.getItem('k_auth_vfinal')) return;
+  if (!currentUser) return;
   const container = document.getElementById('main-content');
   const teams = currentCategory === 'kpi' ? KPI_TEAMS : TASK_TEAMS;
   const dataList = currentCategory === 'kpi' ? KPI_DATA_FULL : TASK_DATA_FULL;
 
   // LNB
   if (currentView === 'tracking') {
-    renderLNB(teams, null, 'scrollToSection');
+    renderLNB(teams, null, 'scroll-section');
   } else if (currentView === 'history') {
-    renderLNB(teams, currentHistoryTeam, 'selectHistoryTeam');
+    renderLNB(teams, currentHistoryTeam, 'select-history-team');
   } else {
     document.getElementById('lnb-area').style.display = 'none';
   }
@@ -556,15 +697,18 @@ function render() {
     if (filtered.length === 0) {
       container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📜</div><div>기록이 없습니다.</div></div>';
     } else {
+      // tag 클래스는 화이트리스트로만 허용하여 CSS 클래스 주입 방지
+      const ALLOWED_ACTIONS = { '등록': '등록', '수정': '수정', '삭제': '삭제' };
       container.innerHTML = filtered.map(function(l) {
+        const safeAction = ALLOWED_ACTIONS[l.action] || '기타';
         return '<div class="log-card">' +
           '<div class="log-header">' +
             '<div style="display:flex; align-items:center; gap:10px;">' +
-              '<span class="log-tag tag-' + l.action + '">' + l.action + '</span>' +
-              '<span style="color:var(--text3); font-size:11px;">' + l.time + '</span>' +
-              '<span style="font-size:13px; font-weight:900;">' + l.team + ' — ' + l.item + '</span>' +
+              '<span class="log-tag tag-' + escapeAttr(safeAction) + '">' + escapeHtml(safeAction) + '</span>' +
+              '<span style="color:var(--text3); font-size:11px;">' + escapeHtml(l.time) + '</span>' +
+              '<span style="font-size:13px; font-weight:900;">' + escapeHtml(l.team) + ' — ' + escapeHtml(l.item) + '</span>' +
             '</div>' +
-            '<span style="font-size:11px; color:var(--accent);">UID: ' + l.user + '</span>' +
+            '<span style="font-size:11px; color:var(--accent);">UID: ' + escapeHtml(l.user) + '</span>' +
           '</div>' +
           '<div class="log-body">' + escapeHtml(l.details) + '</div>' +
         '</div>';
@@ -577,12 +721,12 @@ function render() {
   if (currentView === 'kpilist') {
     let html = '<div class="kpi-grid-container">';
     KPI_TEAMS.forEach(function(team) {
-      html += '<div class="kpi-team-label">' + team + '</div>';
+      html += '<div class="kpi-team-label">' + escapeHtml(team) + '</div>';
       KPI_GUIDE_DATA.filter(function(d) { return d.team === team; }).forEach(function(k) {
         html += '<div class="kpi-box">' +
-          '<div class="kpi-weight-tag">' + k.weight + '</div>' +
-          '<div class="kpi-box-title">' + k.item + '</div>' +
-          '<div class="kpi-box-guide">' + k.guide + '</div>' +
+          '<div class="kpi-weight-tag">' + escapeHtml(k.weight) + '</div>' +
+          '<div class="kpi-box-title">' + escapeHtml(k.item) + '</div>' +
+          '<div class="kpi-box-guide">' + escapeHtml(k.guide) + '</div>' +
         '</div>';
       });
     });
@@ -602,11 +746,11 @@ function render() {
       if (hData.length > 0) {
         hasAny = true;
         html += '<div class="history-month-block">' +
-          '<div class="history-month-title">' + MONTHS[m] + ' <span class="month-badge">RECORD</span></div>' +
+          '<div class="history-month-title">' + escapeHtml(MONTHS[m]) + ' <span class="month-badge">RECORD</span></div>' +
           '<div class="history-items-grid">' +
           hData.map(function(d) {
-            return '<div class="history-item-card" onclick="openModal(\'' + d.id + '\')">' +
-              '<div class="history-item-header">' + d.item + '</div>' +
+            return '<div class="history-item-card" data-action="open-modal" data-id="' + escapeAttr(d.id) + '">' +
+              '<div class="history-item-header">' + escapeHtml(d.item) + '</div>' +
               '<div class="history-item-body">' +
                 '<div class="data-row"><div class="data-label" style="color:var(--green);">[실적]</div><div class="data-val">' + escapeHtml(d.lastDone) + '</div></div>' +
                 '<div class="data-row"><div class="data-label" style="color:var(--accent);">[계획]</div><div class="data-val">' + escapeHtml(d.thisPlan) + '</div></div>' +
@@ -617,7 +761,7 @@ function render() {
       }
     }
     if (!hasAny) {
-      html += '<div class="empty-state"><div class="empty-state-icon">📅</div><div>' + currentHistoryTeam + '의 ' + currentYear + '년 기록이 없습니다.</div></div>';
+      html += '<div class="empty-state"><div class="empty-state-icon">📅</div><div>' + escapeHtml(currentHistoryTeam) + '의 ' + currentYear + '년 기록이 없습니다.</div></div>';
     }
     html += '</div>';
     container.innerHTML = html;
@@ -634,8 +778,8 @@ function render() {
       const items = dataList[team] || [];
       return '<div class="panel" id="sec-' + idx + '">' +
         '<div class="panel-header">' +
-          '<span>' + team + ' <span class="month-badge">' + MONTHS[currentMonth] + '</span></span>' +
-          '<button class="btn-reg" onclick="openModal(null,\'' + team.replace(/'/g, "\\'") + '\')">+ 등록</button>' +
+          '<span>' + escapeHtml(team) + ' <span class="month-badge">' + escapeHtml(MONTHS[currentMonth]) + '</span></span>' +
+          '<button class="btn-reg" data-action="open-modal" data-team="' + escapeAttr(team) + '">+ 등록</button>' +
         '</div>' +
         '<div class="panel-body">' +
         (items.length === 0
@@ -645,23 +789,26 @@ function render() {
               const entryId = entry ? String(entry.id) : '';
               const lastDone = entry ? escapeHtml(entry.lastDone) : '<span style="color:var(--text3);">-</span>';
               const thisPlan = entry ? escapeHtml(entry.thisPlan) : '<span style="color:var(--text3);">-</span>';
-              const ownerHtml = k.owner ? '<div style="font-size:11px; color:var(--text3); margin-top:4px;">담당: ' + k.owner + '</div>' : '';
+              const ownerHtml = k.owner ? '<div style="font-size:11px; color:var(--text3); margin-top:4px;">담당: ' + escapeHtml(k.owner) + '</div>' : '';
               const prevM = currentMonth === 0 ? 11 : currentMonth - 1;
               const prevMonthLabel = MONTHS[prevM] + ' 실적';
               const thisMonthLabel = MONTHS[currentMonth] + ' 계획';
-              return '<div class="tracking-card-wide" onclick="openModal(\'' + entryId + '\',\'' + team.replace(/'/g, "\\'") + '\',\'' + k.item.replace(/'/g, "\\'") + '\')">' +
+              return '<div class="tracking-card-wide" data-action="open-modal"' +
+                  ' data-id="' + escapeAttr(entryId) + '"' +
+                  ' data-team="' + escapeAttr(team) + '"' +
+                  ' data-item="' + escapeAttr(k.item) + '">' +
                 '<div style="border-right:1px solid rgba(255,255,255,0.06); padding-right:20px;">' +
-                  '<div style="font-weight:900; color:#fff; font-size:15px;">' + k.item + '</div>' +
+                  '<div style="font-weight:900; color:#fff; font-size:15px;">' + escapeHtml(k.item) + '</div>' +
                   ownerHtml +
                 '</div>' +
                 '<div class="data-stack">' +
                   '<div class="data-block">' +
-                    '<div class="data-label" style="color:var(--green);">' + prevMonthLabel + '</div>' +
+                    '<div class="data-label" style="color:var(--green);">' + escapeHtml(prevMonthLabel) + '</div>' +
                     '<div class="data-val">' + lastDone + '</div>' +
                   '</div>' +
                   '<div style="height:1px; background:rgba(255,255,255,0.05);"></div>' +
                   '<div class="data-block">' +
-                    '<div class="data-label" style="color:var(--accent);">' + thisMonthLabel + '</div>' +
+                    '<div class="data-label" style="color:var(--accent);">' + escapeHtml(thisMonthLabel) + '</div>' +
                     '<div class="data-val">' + thisPlan + '</div>' +
                   '</div>' +
                 '</div>' +
@@ -708,12 +855,12 @@ function openModal(id, teamHint, itemHint) {
 
   // 월 옵션
   fMonth.innerHTML = MONTHS.map(function(m, i) {
-    return '<option value="' + i + '">' + m + '</option>';
+    return '<option value="' + i + '">' + escapeHtml(m) + '</option>';
   }).join('');
 
   // 팀 옵션
   fTeam.innerHTML = teams.map(function(t) {
-    return '<option value="' + t + '">' + t + '</option>';
+    return '<option value="' + escapeAttr(t) + '">' + escapeHtml(t) + '</option>';
   }).join('');
 
   if (id) {
@@ -758,7 +905,7 @@ function updateKpiOptions() {
   const list = currentCategory === 'kpi' ? KPI_DATA_FULL : TASK_DATA_FULL;
   const items = list[t] || [];
   document.getElementById('f-kpi').innerHTML = items.map(function(k) {
-    return '<option value="' + k.item + '">' + k.item + '</option>';
+    return '<option value="' + escapeAttr(k.item) + '">' + escapeHtml(k.item) + '</option>';
   }).join('');
 }
 
@@ -767,71 +914,179 @@ function closeModal() {
 }
 
 /* ===========================
-   9. CRUD
+   9. CRUD (Firestore)
    =========================== */
-function saveData() {
+// 입력 제한 상수 — 클라이언트 측 1차 검증 (최종 방어는 Firestore 보안 규칙)
+const MAX_TEXT_LEN = 5000;         // 실적/계획 텍스트 최대 길이
+const VALID_TYPES = ['kpi', 'task'];
+const MIN_YEAR = 2020;
+const MAX_YEAR = 2100;
+
+// 현재 카테고리에서 유효한 팀 목록과 항목 목록 반환
+function getValidTeamsAndItems() {
+  const teams = currentCategory === 'kpi' ? KPI_TEAMS : TASK_TEAMS;
+  const dataList = currentCategory === 'kpi' ? KPI_DATA_FULL : TASK_DATA_FULL;
+  return { teams: teams, dataList: dataList };
+}
+
+// 저장/수정 페이로드 검증 — 실패 시 사용자 메시지 반환, 성공 시 null
+function validateRecordPayload(payload) {
+  if (!VALID_TYPES.includes(payload.type)) return '잘못된 카테고리입니다.';
+  if (!Number.isInteger(payload.year) || payload.year < MIN_YEAR || payload.year > MAX_YEAR) {
+    return '연도 값이 올바르지 않습니다.';
+  }
+  if (!Number.isInteger(payload.month) || payload.month < 0 || payload.month > 11) {
+    return '월 값이 올바르지 않습니다.';
+  }
+  const { teams, dataList } = getValidTeamsAndItems();
+  if (!teams.includes(payload.team)) return '허용되지 않은 팀입니다.';
+  const allowedItems = (dataList[payload.team] || []).map(function(k) { return k.item; });
+  if (!allowedItems.includes(payload.item)) return '허용되지 않은 항목입니다.';
+  if (typeof payload.lastDone !== 'string' || payload.lastDone.length > MAX_TEXT_LEN) {
+    return '실적 내용이 너무 깁니다. (최대 ' + MAX_TEXT_LEN + '자)';
+  }
+  if (typeof payload.thisPlan !== 'string' || payload.thisPlan.length > MAX_TEXT_LEN) {
+    return '계획 내용이 너무 깁니다. (최대 ' + MAX_TEXT_LEN + '자)';
+  }
+  return null;
+}
+
+async function saveData() {
   const fId = document.getElementById('f-id').value;
   const team = document.getElementById('f-team').value;
   const item = document.getElementById('f-kpi').value;
   const lastDone = document.getElementById('f-last').value;
   const thisPlan = document.getElementById('f-this').value;
-  const month = parseInt(document.getElementById('f-month').value);
+  const monthRaw = document.getElementById('f-month').value;
+  const month = parseInt(monthRaw, 10);
 
-  if (!item) { alert('항목을 선택해주세요.'); return; }
+  const payload = {
+    type: currentCategory,
+    year: currentYear,
+    month: month,
+    team: team,
+    item: item,
+    lastDone: lastDone,
+    thisPlan: thisPlan
+  };
 
-  const old = db.find(function(x) { return String(x.id) === String(fId); });
-
-  if (old) {
-    let diff = '';
-    if (old.lastDone !== lastDone) diff += '[실적] ' + old.lastDone + ' → ' + lastDone + '\n';
-    if (old.thisPlan !== thisPlan) diff += '[계획] ' + old.thisPlan + ' → ' + thisPlan;
-    addHistoryLog('수정', currentCategory, team, item, diff || '변경사항 없음');
-    old.team = team;
-    old.item = item;
-    old.lastDone = lastDone;
-    old.thisPlan = thisPlan;
-    old.month = month;
-    old.year = currentYear;
-  } else {
-    const newEntry = {
-      id: Date.now(),
-      type: currentCategory,
-      year: currentYear,
-      month: month,
-      team: team,
-      item: item,
-      lastDone: lastDone,
-      thisPlan: thisPlan
-    };
-    addHistoryLog('등록', currentCategory, team, item, '실적: ' + lastDone + '\n계획: ' + thisPlan);
-    db.push(newEntry);
+  const validationError = validateRecordPayload(payload);
+  if (validationError) {
+    alert(validationError);
+    return;
   }
 
-  saveDB();
-  closeModal();
-  render();
+  const fb = window.fb;
+  // fId는 Firestore 문서 ID — 영숫자/언더스코어/하이픈만 허용 (경로 주입 방지)
+  const old = (fId && /^[A-Za-z0-9_-]+$/.test(fId))
+    ? db.find(function(x) { return String(x.id) === String(fId); })
+    : null;
+
+  try {
+    if (old) {
+      let diff = '';
+      if (old.lastDone !== lastDone) diff += '[실적] ' + old.lastDone + ' → ' + lastDone + '\n';
+      if (old.thisPlan !== thisPlan) diff += '[계획] ' + old.thisPlan + ' → ' + thisPlan;
+      await fb.setDoc(fb.doc(fb.db_fs, 'records', String(old.id)), {
+        type: payload.type,
+        year: payload.year,
+        month: payload.month,
+        team: payload.team,
+        item: payload.item,
+        lastDone: payload.lastDone,
+        thisPlan: payload.thisPlan,
+        updatedAt: fb.serverTimestamp()
+      });
+      await addHistoryLog('수정', payload.type, payload.team, payload.item, diff || '변경사항 없음');
+    } else {
+      await fb.addDoc(fb.collection(fb.db_fs, 'records'), {
+        type: payload.type,
+        year: payload.year,
+        month: payload.month,
+        team: payload.team,
+        item: payload.item,
+        lastDone: payload.lastDone,
+        thisPlan: payload.thisPlan,
+        createdAt: fb.serverTimestamp(),
+        updatedAt: fb.serverTimestamp()
+      });
+      await addHistoryLog('등록', payload.type, payload.team, payload.item, '실적: ' + payload.lastDone + '\n계획: ' + payload.thisPlan);
+    }
+    closeModal();
+  } catch (err) {
+    console.error('saveData 오류:', err);
+    alert('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+  }
 }
 
-function deleteData() {
+async function deleteData() {
   const fId = document.getElementById('f-id').value;
+  // Firestore 문서 ID 형식 검증 — 경로 조작 방지
+  if (!fId || !/^[A-Za-z0-9_-]+$/.test(fId)) {
+    alert('잘못된 요청입니다.');
+    return;
+  }
   const d = db.find(function(x) { return String(x.id) === String(fId); });
-  if (!d) return;
+  if (!d) {
+    alert('데이터를 찾을 수 없습니다.');
+    return;
+  }
+  // 현재 카테고리와 일치하는지 확인 — 다른 카테고리 문서를 엉뚱한 로그로 삭제 방지
+  if (d.type !== currentCategory) {
+    alert('권한이 없습니다.');
+    return;
+  }
   if (!confirm('정말 삭제하시겠습니까?')) return;
-  addHistoryLog('삭제', currentCategory, d.team, d.item, '실적: ' + d.lastDone + ' / 계획: ' + d.thisPlan);
-  db = db.filter(function(x) { return String(x.id) !== String(fId); });
-  saveDB();
-  closeModal();
-  render();
+
+  const fb = window.fb;
+  try {
+    await fb.deleteDoc(fb.doc(fb.db_fs, 'records', String(fId)));
+    await addHistoryLog('삭제', currentCategory, d.team, d.item, '실적: ' + d.lastDone + ' / 계획: ' + d.thisPlan);
+    closeModal();
+  } catch (err) {
+    console.error('deleteData 오류:', err);
+    alert('삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+  }
 }
 
-function addHistoryLog(action, category, team, item, details) {
+const ALLOWED_LOG_ACTIONS = ['등록', '수정', '삭제'];
+const MAX_LOG_DETAILS_LEN = 12000;
+
+async function addHistoryLog(action, category, team, item, details) {
+  // action/category 화이트리스트 — Firestore에 비정상 값이 들어가는 것을 차단
+  if (!ALLOWED_LOG_ACTIONS.includes(action)) {
+    console.warn('허용되지 않은 로그 액션:', action);
+    return;
+  }
+  if (!VALID_TYPES.includes(category)) {
+    console.warn('허용되지 않은 로그 카테고리:', category);
+    return;
+  }
+  const safeDetails = (typeof details === 'string' ? details : String(details || ''))
+    .slice(0, MAX_LOG_DETAILS_LEN);
+  const safeTeam = String(team || '').slice(0, 200);
+  const safeItem = String(item || '').slice(0, 200);
+
+  const fb = window.fb;
   const now = new Date();
-  const uid = sessionStorage.getItem('k_uid') || 'Admin';
   const pad = function(n) { return String(n).padStart(2, '0'); };
   const time = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) +
     ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
-  logs.unshift({ time: time, action: action, category: category.toUpperCase(), team: team, item: item, details: details, user: uid });
-  saveLogs();
+  const user = (currentUser && currentUser.email) ? currentUser.email : 'unknown';
+  try {
+    await fb.addDoc(fb.collection(fb.db_fs, 'logs'), {
+      time: time,
+      action: action,
+      category: category.toUpperCase(),
+      team: safeTeam,
+      item: safeItem,
+      details: safeDetails,
+      user: user,
+      createdAt: fb.serverTimestamp()
+    });
+  } catch (err) {
+    console.error('로그 기록 실패:', err);
+  }
 }
 
 /* ===========================
@@ -913,8 +1168,9 @@ function exportToExcel() {
 /* ===========================
    12. 유틸
    =========================== */
+// HTML 텍스트 컨텍스트용 이스케이프 — 요소 내부 텍스트에 삽입할 때 사용
 function escapeHtml(str) {
-  if (!str) return '';
+  if (str === null || str === undefined) return '';
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -923,12 +1179,17 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// HTML 속성 컨텍스트용 이스케이프 — 쌍따옴표로 감싼 속성값 내부에 삽입할 때 사용
+// escapeHtml과 동일한 규칙이지만 의미 명확화를 위해 분리
+function escapeAttr(str) {
+  return escapeHtml(str);
+}
+
 /* ===========================
    13. 초기화
    =========================== */
-window.onload = function() {
-  checkAuth();
-};
+// Firebase Auth 상태 변경 리스너가 window.onFirebaseLogin / onFirebaseLogout 을
+// 호출하여 앱 초기화와 정리를 담당한다. 추가 초기화는 필요 없음.
 </script>
 </body>
 </html>
